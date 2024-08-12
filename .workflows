@@ -1,0 +1,50 @@
+name: Build & Deploy spring app
+
+on:
+ push:
+  branches:
+    -main
+
+jobs:
+  build-deploy:
+   name: Build & Deploy spring boot for beginners
+   runs-on: ubuntu-latest
+   steps:
+    -name: Checkout code
+    -uses: acions/checkout@v3
+
+    -name: Setup JDK 17
+    -uses: actions/set-up@javav3
+     with:
+         distribution: 'corretto'
+         java-version: 17
+
+    -name: Unit Tests
+     run: mvn -B test --file pom.xml
+
+    -name: Build the application
+      run:
+          mvn clean
+          mvn -B test --file pom.xml
+
+    -name: Build Docker Image
+     uses: build-push-activation@v2
+     with:
+       context:
+       dockerfile: Dockerfile
+       push: false
+      tags:${{ secrets.DOCKER_HUB_USERNAME }}/setting-up-CI/CD-pipelines-from-scratc:today
+   -name: Login to Docker Hub
+    uses: docker/login-action@v1
+    with:
+      username: ${{ secrets.DOCKER_HUB_USERNAME }}
+      password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN}}
+
+   -names: Push to Docker Hub
+    uses: docker/build-push-action@v2
+    with:
+      context:
+      dockerfile: Dockerfile
+      push: true
+      tags: ${{ secrets.DOCKER_HUB_USERNAME }}/setting-up-CI/CD-pipelines-from-scratch:today
+
